@@ -185,7 +185,17 @@ if action == "View loans":
             file_name="EGSA_Loans_View.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        # ✅ END DOWNLOAD BUTTON
+
+        # ✅ ADD REFRESH / CLEANUP BUTTON
+        st.subheader("Maintenance Actions")
+        if st.button("🧹 Refresh / Delete All Loan Data"):
+            cur = con.cursor()
+            cur.execute("DELETE FROM repayments")
+            cur.execute("DELETE FROM loans")
+            con.commit()
+            st.warning("✅ All loan and repayment records have been cleared. Please refresh the page.")
+
+        # ✅ END DOWNLOAD + REFRESH
 
         loan_id = st.number_input("Show schedule for loan id", min_value=1, value=int(loans_df.iloc[0].id))
         if st.button("Show schedule"):
