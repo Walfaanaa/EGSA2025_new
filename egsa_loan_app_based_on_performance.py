@@ -4,6 +4,7 @@ import pandas as pd
 import sqlite3
 from datetime import date, timedelta
 import math
+from io import BytesIO  # ✅ added for Excel download
 
 DB = "egsa_loans.db"
 
@@ -59,7 +60,6 @@ def loan_offer_by_new_members(new_count):
 
 def compute_interest_upfront(principal, annual_rate, term_months):
     return principal * annual_rate * (1)
-
 
 def build_schedule(principal, term_months, annual_rate, disbursed_date):
     schedule = []
@@ -175,6 +175,20 @@ if action == "View loans":
         st.info("No loans yet.")
     else:
         st.dataframe(loans_df)
+
+        # ✅ --- DOWNLOAD BUTTON ADDED HERE ---
+        st.subheader("Download Loan View")
+        buffer = BytesIO()
+        loans_df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        st.download_button(
+            label="📥 Download Loans (Excel)",
+            data=buffer,
+            file_name="EGSA_Loans_View.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        # ✅ --- END OF NEW CODE ---
+
         # show schedule for selected loan
         loan_id = st.number_input("Show schedule for loan id", min_value=1, value=int(loans_df.iloc[0].id))
         if st.button("Show schedule"):
