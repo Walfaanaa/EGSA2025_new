@@ -4,7 +4,7 @@ import pandas as pd
 import sqlite3
 from datetime import date, timedelta
 import math
-from io import BytesIO  # ✅ added for Excel download
+from io import BytesIO   # ✅ added for download feature
 
 DB = "egsa_loans.db"
 
@@ -66,7 +66,6 @@ def build_schedule(principal, term_months, annual_rate, disbursed_date):
     interest_upfront = compute_interest_upfront(principal, annual_rate, term_months)
     disbursed_amount = principal - interest_upfront
     if annual_rate == 0.0 and term_months == 12:
-        # lump-sum at month 12
         due = pd.to_datetime(disbursed_date) + pd.DateOffset(months=12)
         schedule.append({
             "installment_no": 1,
@@ -159,7 +158,6 @@ if action == "Record repayment":
         if st.button("Save payment"):
             cur = con.cursor()
             cur.execute("INSERT INTO repayments (loan_id, amount) VALUES (?, ?)", (loan_choice, amount))
-            # optionally update status if fully repaid:
             total_paid = pd.read_sql_query("SELECT IFNULL(SUM(amount),0) as s FROM repayments WHERE loan_id = ?", con, params=(loan_choice,)).iloc[0,0]
             principal = loan['principal']
             if total_paid >= principal:
@@ -176,7 +174,7 @@ if action == "View loans":
     else:
         st.dataframe(loans_df)
 
-        # ✅ --- DOWNLOAD BUTTON ADDED HERE ---
+        # ✅ ADD DOWNLOAD BUTTON
         st.subheader("Download Loan View")
         buffer = BytesIO()
         loans_df.to_excel(buffer, index=False)
@@ -187,9 +185,8 @@ if action == "View loans":
             file_name="EGSA_Loans_View.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        # ✅ --- END OF NEW CODE ---
+        # ✅ END DOWNLOAD BUTTON
 
-        # show schedule for selected loan
         loan_id = st.number_input("Show schedule for loan id", min_value=1, value=int(loans_df.iloc[0].id))
         if st.button("Show schedule"):
             r = pd.read_sql_query("SELECT * FROM loans WHERE id = ?", con, params=(loan_id,))
@@ -200,7 +197,6 @@ if action == "View loans":
                 interest_upfront, disbursed, sched = build_schedule(row.principal, row.term_months, row.annual_rate, row.disbursed_date)
                 st.write(f"interest_upfront: {interest_upfront}, disbursed: {disbursed}")
                 st.dataframe(sched)
-                # show repayments
                 repayments = pd.read_sql_query("SELECT payment_date, amount FROM repayments WHERE loan_id = ?", con, params=(loan_id,))
                 st.write("Repayments:")
                 st.dataframe(repayments)
